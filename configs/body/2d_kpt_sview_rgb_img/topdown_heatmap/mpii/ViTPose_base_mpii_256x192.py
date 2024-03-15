@@ -116,12 +116,12 @@ val_pipeline = [
 
 test_pipeline = val_pipeline
 
-data_root = 'data/mpii'
+data_root = '/datagrid/personal/baljibil/data/MPII_COCO'
 data = dict(
-    samples_per_gpu=64,
+    samples_per_gpu=32,
     workers_per_gpu=2,
-    val_dataloader=dict(samples_per_gpu=32),
-    test_dataloader=dict(samples_per_gpu=32),
+    val_dataloader=dict(samples_per_gpu=16),
+    test_dataloader=dict(samples_per_gpu=16),
     train=dict(
         type='TopDownMpiiDataset',
         ann_file=f'{data_root}/annotations/mpii_train.json',
