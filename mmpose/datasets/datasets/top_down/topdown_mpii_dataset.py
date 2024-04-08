@@ -314,7 +314,8 @@ class TopDownMpiiDataset(Kpt2dSviewRgbImgTopDownDataset):
                                 ), axis=0)
 
 
-
+        print("COCO pred:", pos_pred_src)
+        print("GT: ", pos_gt_src)
         uv_error = pos_pred_src - pos_gt_src
         uv_err = np.linalg.norm(uv_error, axis=1)
         headsizes = headboxes_src[1, :, :] - headboxes_src[0, :, :]
