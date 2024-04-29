@@ -200,6 +200,7 @@ class TopDownMpiiDataset(Kpt2dSviewRgbImgTopDownDataset):
 
         gt_file = osp.join(osp.dirname(self.ann_file), 'mpii_gt_val.mat')
         gt_dict = loadmat(gt_file)
+        
         dataset_joints = gt_dict['dataset_joints']
         jnt_missing = gt_dict['jnt_missing']
         pos_gt_src = gt_dict['pos_gt_src']
