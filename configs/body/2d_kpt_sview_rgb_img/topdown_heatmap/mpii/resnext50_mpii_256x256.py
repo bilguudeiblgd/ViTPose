@@ -53,7 +53,7 @@ data_cfg = dict(
     dataset_channel=channel_cfg['dataset_channel'],
     inference_channel=channel_cfg['inference_channel'],
     use_gt_bbox=True,
-    bbox_file=None,
+    bbox_file= None
 )
 
 train_pipeline = [
@@ -93,7 +93,7 @@ val_pipeline = [
 
 test_pipeline = val_pipeline
 
-data_root = 'data/mpii'
+data_root = '/datagrid/personal/baljibil/data/COCO/original'
 data = dict(
     samples_per_gpu=64,
     workers_per_gpu=2,
@@ -101,22 +101,22 @@ data = dict(
     test_dataloader=dict(samples_per_gpu=32),
     train=dict(
         type='TopDownMpiiDataset',
-        ann_file=f'{data_root}/annotations/mpii_train.json',
-        img_prefix=f'{data_root}/images/',
+        ann_file=f'{data_root}/annotations/person_keypoints_train2017.json',
+        img_prefix=f'{data_root}/train2017/',
         data_cfg=data_cfg,
         pipeline=train_pipeline,
         dataset_info={{_base_.dataset_info}}),
     val=dict(
         type='TopDownMpiiDataset',
-        ann_file=f'{data_root}/annotations/mpii_val.json',
-        img_prefix=f'{data_root}/images/',
+        ann_file=f'{data_root}/annotations/person_keypoints_val2017.json',
+        img_prefix=f'{data_root}/val2017/',
         data_cfg=data_cfg,
         pipeline=val_pipeline,
         dataset_info={{_base_.dataset_info}}),
     test=dict(
         type='TopDownMpiiDataset',
-        ann_file=f'{data_root}/annotations/mpii_val.json',
-        img_prefix=f'{data_root}/images/',
+        ann_file=f'{data_root}/annotations/person_keypoints_val2017.json',
+        img_prefix=f'{data_root}/val2017/',
         data_cfg=data_cfg,
         pipeline=test_pipeline,
         dataset_info={{_base_.dataset_info}}),

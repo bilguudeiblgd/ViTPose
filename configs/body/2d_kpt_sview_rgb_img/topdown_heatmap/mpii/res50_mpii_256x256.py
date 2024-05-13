@@ -1,6 +1,6 @@
 _base_ = [
     '../../../../_base_/default_runtime.py',
-    '../../../../_base_/datasets/mpii.py'
+    '../../../../_base_/datasets/coco.py'
 ]
 evaluation = dict(interval=10, metric='PCKh', save_best='PCKh')
 
@@ -93,7 +93,7 @@ val_pipeline = [
 
 test_pipeline = val_pipeline
 
-data_root = '/datagrid/personal/baljibil/data/MPII_COCO'
+data_root = '/datagrid/personal/baljibil/data/COCO/original'
 
 data = dict(
     samples_per_gpu=64,
@@ -101,23 +101,23 @@ data = dict(
     val_dataloader=dict(samples_per_gpu=32),
     test_dataloader=dict(samples_per_gpu=32),
     train=dict(
-        type='TopDownMpiiDataset',
-        ann_file=f'{data_root}/annotations/mpii_train.json',
-        img_prefix=f'{data_root}/images/',
+        type='TopDownCocoDataset',
+        ann_file=f'{data_root}/annotations/person_keypoints_train2017.json',
+        img_prefix=f'{data_root}/train2017/',
         data_cfg=data_cfg,
         pipeline=train_pipeline,
         dataset_info={{_base_.dataset_info}}),
     val=dict(
-        type='TopDownMpiiDataset',
-        ann_file=f'{data_root}/annotations/mpii_val.json',
-        img_prefix=f'{data_root}/images/',
+        type='TopDownCocoDataset',
+        ann_file=f'{data_root}/annotations/person_keypoints_val2017.json',
+        img_prefix=f'{data_root}/val2017/',
         data_cfg=data_cfg,
         pipeline=val_pipeline,
         dataset_info={{_base_.dataset_info}}),
     test=dict(
-        type='TopDownMpiiDataset',
-        ann_file=f'{data_root}/annotations/mpii_val.json',
-        img_prefix=f'{data_root}/images/',
+        type='TopDownCocoDataset',
+        ann_file=f'{data_root}/annotations/person_keypoints_val2017.json',
+        img_prefix=f'{data_root}/val2017/',
         data_cfg=data_cfg,
         pipeline=test_pipeline,
         dataset_info={{_base_.dataset_info}}),

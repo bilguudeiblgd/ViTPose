@@ -105,7 +105,8 @@ val_pipeline = [
 
 test_pipeline = val_pipeline
 
-data_root = 'data/coco'
+data_root = '/datagrid/personal/baljibil/data/COCO/original'
+
 data = dict(
     samples_per_gpu=64,
     workers_per_gpu=2,
@@ -133,3 +134,4 @@ data = dict(
         pipeline=test_pipeline,
         dataset_info={{_base_.dataset_info}}),
 )
+
