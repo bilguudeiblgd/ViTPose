@@ -156,7 +156,7 @@ model = dict(
         ],
     train_cfg=dict(),
     test_cfg=dict(
-        flip_test=True,
+        flip_test=False,
         post_process='default',
         shift_heatmap=False,
         target_type=target_type,
@@ -174,7 +174,7 @@ data_cfg = dict(
     nms_thr=1.0,
     oks_thr=0.9,
     vis_thr=0.2,
-    use_gt_bbox=False,
+    use_gt_bbox=True,
     det_bbox_thr=0.0,
     bbox_file='data/coco/person_detection_results/'
     'COCO_val2017_detections_AP_H_56_person.json',
@@ -417,9 +417,9 @@ val_pipeline = [
 
 test_pipeline = val_pipeline
 
-data_root = 'data/coco'
+data_root = '/datagrid/personal/baljibil/data/COCO/original'
 aic_data_root = 'data/aic'
-mpii_data_root = 'data/mpii'
+mpii_data_root = '/datagrid/personal/baljibil/data/MPII_COCO'
 ap10k_data_root = 'data/ap10k'
 ap36k_data_root = 'data/ap36k'
 

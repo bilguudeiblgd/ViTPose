@@ -174,7 +174,8 @@ def main():
         if args.out:
             print(f'\nwriting results to {args.out}')
             mmcv.dump(outputs, args.out)
-
+        print("USED HEAD 1, output!")
+        print(outputs)
         results = dataset.evaluate(outputs, cfg.work_dir, **eval_config)
         for k, v in sorted(results.items()):
             print(f'{k}: {v}')
