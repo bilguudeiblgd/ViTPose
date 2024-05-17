@@ -258,6 +258,7 @@ class TopDownCocoDataset(Kpt2dSviewRgbImgTopDownDataset):
         Returns:
             dict: Evaluation results for evaluation metric.
         """
+        
         metrics = metric if isinstance(metric, list) else [metric]
         allowed_metrics = ['mAP']
         for metric in metrics:
@@ -275,6 +276,8 @@ class TopDownCocoDataset(Kpt2dSviewRgbImgTopDownDataset):
 
         for result in results:
             preds = result['preds']
+            print("Pred shape: ")
+            print(preds.shape)
             boxes = result['boxes']
             image_paths = result['image_paths']
             bbox_ids = result['bbox_ids']
@@ -358,6 +361,7 @@ class TopDownCocoDataset(Kpt2dSviewRgbImgTopDownDataset):
         print("--------------------")
         print(len(keypoints[0]))
         print("--------------------")
+        print(keypoints[0])
 
         for img_kpts in keypoints:
             if len(img_kpts) == 0:
@@ -365,8 +369,6 @@ class TopDownCocoDataset(Kpt2dSviewRgbImgTopDownDataset):
 
             _key_points = np.array(
                 [img_kpt['keypoints'] for img_kpt in img_kpts])
-            print(_key_points.shape)
-            print(_key_points)
             key_points = _key_points.reshape(-1,
                                             #  For example for MPII
                                              (self.ann_info['num_joints'] - 1) * 3)
