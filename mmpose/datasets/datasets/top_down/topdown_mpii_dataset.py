@@ -169,7 +169,7 @@ class TopDownMpiiDataset(Kpt2dSviewRgbImgTopDownDataset):
         Returns:
             dict: PCKh for each joint
         """
-
+        metric = 'PCKh'
         metrics = metric if isinstance(metric, list) else [metric]
         allowed_metrics = ['PCKh']
         for metric in metrics:
@@ -192,7 +192,7 @@ class TopDownMpiiDataset(Kpt2dSviewRgbImgTopDownDataset):
         preds = preds[..., :2] + 1.0
 
         if res_folder:
-            pred_file = osp.join(res_folder, 'pred.mat')
+            pred_file = osp.join(res_folder, 'pred_coco.mat')
             savemat(pred_file, mdict={'preds': preds})
 
         SC_BIAS = 0.6
@@ -223,6 +223,95 @@ class TopDownMpiiDataset(Kpt2dSviewRgbImgTopDownDataset):
         rhip = np.where(dataset_joints == 'rhip')[1][0]
 
         jnt_visible = 1 - jnt_missing
+        map_mpii2coco = {0:16, 1:14, 5: 15, 4: 13, 2:12, 3:11, 15: 9, 14:7, 13: 5, 10:10, 11:8, 12:6}
+        map_coco2mpii = {v:k for k,v in map_mpii2coco.items()}
+        
+        pos_pred_src = np.stack((
+                                # Right ankle
+                                 pos_pred_src[16],
+                                # Right knee
+                                 pos_pred_src[14],
+                                # Left ankle
+                                 pos_pred_src[15],
+                                # Left knee
+                                 pos_pred_src[13],
+                                # Right Hips
+                                 pos_pred_src[12],
+                                # Left hips
+                                 pos_pred_src[11],
+                                # Right wrist
+                                 pos_pred_src[10],
+                                # Right elbow
+                                 pos_pred_src[8],
+                                # Right shoulder
+                                 pos_pred_src[6],
+                                # Left wrist
+                                 pos_pred_src[9],
+                                # Left elbow
+                                 pos_pred_src[7],
+                                # Left shoulder
+                                 pos_pred_src[5],
+
+                                 ), axis=0)
+        pos_gt_src = np.stack((
+                              # Right ankle
+                                pos_gt_src[map_coco2mpii[16]],
+                            # Right knee
+                                pos_gt_src[map_coco2mpii[14]],
+                            # Left ankle
+                                pos_gt_src[map_coco2mpii[15]],
+                            # Left knee
+                                pos_gt_src[map_coco2mpii[13]],
+                            # Right Hips
+                                pos_gt_src[map_coco2mpii[12]],
+                            # Left hips
+                                pos_gt_src[map_coco2mpii[11]],
+                            # Right wrist
+                                pos_gt_src[map_coco2mpii[10]],
+                            # Right elbow
+                                pos_gt_src[map_coco2mpii[8]],
+                            # Right shoulder
+                                pos_gt_src[map_coco2mpii[6]],
+                            # Left wrist
+                                pos_gt_src[map_coco2mpii[9]],
+                            # Left elbow
+                                pos_gt_src[map_coco2mpii[7]],
+                            # Left shoulder
+                                pos_gt_src[map_coco2mpii[5]],
+
+                               ), axis=0)
+
+        jnt_visible = np.stack((
+                            # Right ankle 0
+                                jnt_visible[map_coco2mpii[16]],
+                            # Right knee 1
+                                jnt_visible[map_coco2mpii[14]],
+                            # Left ankle 2
+                                jnt_visible[map_coco2mpii[15]],
+                            # Left knee 3
+                                jnt_visible[map_coco2mpii[13]],
+                            # Right Hips 4
+                                jnt_visible[map_coco2mpii[12]],
+                            # Left hips 5
+                                jnt_visible[map_coco2mpii[11]],
+                            # Right wrist 6
+                                jnt_visible[map_coco2mpii[10]],
+                            # Right elbow 7
+                                jnt_visible[map_coco2mpii[8]],
+                            # Right shoulder 8
+                                jnt_visible[map_coco2mpii[6]],
+                            # Left wrist 9 
+                                jnt_visible[map_coco2mpii[9]],
+                            # Left elbow 10 
+                                jnt_visible[map_coco2mpii[7]],
+                            # Left shoulder 11
+                                jnt_visible[map_coco2mpii[5]],
+
+                                ), axis=0)
+
+
+        print("COCO pred:", pos_pred_src)
+        print("GT: ", pos_gt_src)
         uv_error = pos_pred_src - pos_gt_src
         uv_err = np.linalg.norm(uv_error, axis=1)
         headsizes = headboxes_src[1, :, :] - headboxes_src[0, :, :]
@@ -237,7 +326,9 @@ class TopDownMpiiDataset(Kpt2dSviewRgbImgTopDownDataset):
 
         # save
         rng = np.arange(0, 0.5 + 0.01, 0.01)
-        pckAll = np.zeros((len(rng), 16), dtype=np.float32)
+
+        # Change 12 to desired keypoints
+        pckAll = np.zeros((len(rng), 12), dtype=np.float32)
 
         for r, threshold in enumerate(rng):
             less_than_threshold = (scaled_uv_err <= threshold) * jnt_visible
@@ -245,21 +336,27 @@ class TopDownMpiiDataset(Kpt2dSviewRgbImgTopDownDataset):
                 less_than_threshold, axis=1) / jnt_count
 
         PCKh = np.ma.array(PCKh, mask=False)
-        PCKh.mask[6:8] = True
+        # PCKh.mask[6:8] = True
 
         jnt_count = np.ma.array(jnt_count, mask=False)
-        jnt_count.mask[6:8] = True
+        # jnt_count.mask[6:8] = True
         jnt_ratio = jnt_count / np.sum(jnt_count).astype(np.float64)
 
-        name_value = [('Head', PCKh[head]),
-                      ('Shoulder', 0.5 * (PCKh[lsho] + PCKh[rsho])),
-                      ('Elbow', 0.5 * (PCKh[lelb] + PCKh[relb])),
-                      ('Wrist', 0.5 * (PCKh[lwri] + PCKh[rwri])),
-                      ('Hip', 0.5 * (PCKh[lhip] + PCKh[rhip])),
-                      ('Knee', 0.5 * (PCKh[lkne] + PCKh[rkne])),
-                      ('Ankle', 0.5 * (PCKh[lank] + PCKh[rank])),
+        name_value = [
+                    #   ('Head', PCKh[head]),
+                      ('Shoulder', 0.5 * (PCKh[8] + PCKh[11])),
+                      ('Elbow', 0.5 * (PCKh[7] + PCKh[10])),
+                      ('Wrist', 0.5 * (PCKh[6] + PCKh[9])),
+                      ('Hip', 0.5 * (PCKh[4] + PCKh[5])),
+                    #   ('Knee', 0.5 * (PCKh[lkne] + PCKh[rkne])),
+                      ('Knee', 0.5 * (PCKh[3] + PCKh[1])), # due to alteration left knee is 4th in array and right knee is 2nd in array
+            
+                    #   ('Ankle', 0.5 * (PCKh[lank] + PCKh[rank])),
+                      ('Ankle', 0.5 * (PCKh[2] + PCKh[0])), # due to alteration left knee is 3rd in array and right knee is 1st in array
+            
                       ('PCKh', np.sum(PCKh * jnt_ratio)),
-                      ('PCKh@0.1', np.sum(pckAll[10, :] * jnt_ratio))]
+                    #   ('PCKh@0.1', np.sum(pckAll[10, :] * jnt_ratio))
+                      ]
         name_value = OrderedDict(name_value)
 
         return name_value
