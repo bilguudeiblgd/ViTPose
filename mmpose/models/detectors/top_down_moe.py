@@ -217,7 +217,7 @@ class TopDownMoE(BasePose):
             features = self.neck(features)
         if self.with_keypoint:
             
-            output_heatmap = self.associate_keypoint_heads[1].inference_model(
+            output_heatmap = self.keypoint_head.inference_model(
                 features, flip_pairs=None)
 
         if self.test_cfg.get('flip_test', True):
@@ -226,13 +226,13 @@ class TopDownMoE(BasePose):
             if self.with_neck:
                 features_flipped = self.neck(features_flipped)
             if self.with_keypoint:
-                output_flipped_heatmap = self.associate_keypoint_heads[1].inference_model(
+                output_flipped_heatmap = self.keypoint_head.inference_model(
                     features_flipped, img_metas[0]['flip_pairs'])
                 output_heatmap = (output_heatmap +
                                   output_flipped_heatmap) * 0.5
 
         if self.with_keypoint:
-            keypoint_result = self.associate_keypoint_heads[1].decode(
+            keypoint_result = self.keypoint_head.decode(
                 img_metas, output_heatmap, img_size=[img_width, img_height])
             result.update(keypoint_result)
 

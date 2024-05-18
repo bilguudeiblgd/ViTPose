@@ -276,8 +276,6 @@ class TopDownCocoDataset(Kpt2dSviewRgbImgTopDownDataset):
 
         for result in results:
             preds = result['preds']
-            print("Pred shape: ")
-            print(preds.shape)
             boxes = result['boxes']
             image_paths = result['image_paths']
             bbox_ids = result['bbox_ids']
@@ -371,7 +369,9 @@ class TopDownCocoDataset(Kpt2dSviewRgbImgTopDownDataset):
                 [img_kpt['keypoints'] for img_kpt in img_kpts])
             key_points = _key_points.reshape(-1,
                                             #  For example for MPII
-                                             (self.ann_info['num_joints'] - 1) * 3)
+                                            #  (self.ann_info['num_joints']) * 3
+                                             (17 * 3)
+                                             )
 
             result = [{
                 'image_id': img_kpt['image_id'],
