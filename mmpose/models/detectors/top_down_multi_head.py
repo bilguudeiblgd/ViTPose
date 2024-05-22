@@ -195,7 +195,7 @@ class TopDownMultiHead(BasePose):
 
         possible_heads = [self.keypoint_head, self.associate_keypoint_heads[0],
                           self.associate_keypoint_heads[1] ]
-        head_idx = 0
+        head_idx = 2
         # 0 -> CoCo (default)
         # 1 -> AIC
         # 2 -> MPII
