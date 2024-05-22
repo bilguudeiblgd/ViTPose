@@ -107,6 +107,8 @@ class TopDownMultiHead(BasePose):
             self.neck.init_weights()
         if self.with_keypoint:
             self.keypoint_head.init_weights()
+        for item in self.associate_keypoint_heads:
+            item.init_weights()
 
     @auto_fp16(apply_to=('img', ))
     def forward(self,
@@ -191,11 +193,17 @@ class TopDownMultiHead(BasePose):
 
         result = {}
 
+        possible_heads = [self.keypoint_head, self.associate_keypoint_heads[0],
+                          self.associate_keypoint_heads[1] ]
+        head_idx = 0
+        # 0 -> CoCo (default)
+        # 1 -> AIC
+        # 2 -> MPII
         features = self.backbone(img)
         if self.with_neck:
             features = self.neck(features)
         if self.with_keypoint:
-            output_heatmap = self.keypoint_head.inference_model(
+            output_heatmap = possible_heads[head_idx].inference_model(
                 features, flip_pairs=None)
 
         if self.test_cfg.get('flip_test', True):
@@ -204,13 +212,13 @@ class TopDownMultiHead(BasePose):
             if self.with_neck:
                 features_flipped = self.neck(features_flipped)
             if self.with_keypoint:
-                output_flipped_heatmap = self.keypoint_head.inference_model(
+                output_flipped_heatmap = possible_heads[head_idx].inference_model(
                     features_flipped, img_metas[0]['flip_pairs'])
                 output_heatmap = (output_heatmap +
                                   output_flipped_heatmap) * 0.5
 
         if self.with_keypoint:
-            keypoint_result = self.keypoint_head.decode(
+            keypoint_result = possible_heads[head_idx].decode(
                 img_metas, output_heatmap, img_size=[img_width, img_height])
             result.update(keypoint_result)
 
