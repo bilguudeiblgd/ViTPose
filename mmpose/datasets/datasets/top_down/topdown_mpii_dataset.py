@@ -181,20 +181,41 @@ class TopDownMpiiDataset(Kpt2dSviewRgbImgTopDownDataset):
         for result in results:
             preds = result['preds']
             bbox_ids = result['bbox_ids']
+            bboxes = result['boxes']
+            image_paths = result['image_paths']
             batch_size = len(bbox_ids)
             for i in range(batch_size):
-                kpts.append({'keypoints': preds[i], 'bbox_id': bbox_ids[i]})
+                kpts.append({'keypoints': preds[i], 'bbox_id': bbox_ids[i], 'image':image_paths[i], 'bbox': bboxes[i]})
         kpts = self._sort_and_unique_bboxes(kpts)
-
+        print(kpts[0])
         preds = np.stack([kpt['keypoints'] for kpt in kpts])
 
         # convert 0-based index to 1-based index,
         # and get the first two dimensions.
+        print("Preds: ", preds)
         preds = preds[..., :2] + 1.0
+        print(" after change Preds: ", preds)
 
         if res_folder:
             pred_file = osp.join(res_folder, 'pred.mat')
             savemat(pred_file, mdict={'preds': preds})
+
+            # Custom format
+            res = dict()
+            items = []
+            for i in range(len(kpts)):
+                items.append({
+                    'joints': kpts[i]['keypoints'].tolist(),
+                    'image': kpts[i]['image'],
+                    'center': kpts[i]['bbox'][:2].tolist(),
+                    'scale': kpts[i]['bbox'][2:4].tolist(),
+                    'bbox_score': float(kpts[i]['bbox'][-1])
+                })
+
+            res['annotations'] = items
+            res_file = osp.join(res_folder, 'result_keypoints_mpii.json')
+            with open(res_file, 'w') as f:
+                json.dump(res, f,  indent=4)
 
         SC_BIAS = 0.6
         threshold = 0.5
