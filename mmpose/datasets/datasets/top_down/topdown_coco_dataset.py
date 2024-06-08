@@ -370,7 +370,7 @@ class TopDownCocoDataset(Kpt2dSviewRgbImgTopDownDataset):
             key_points = _key_points.reshape(-1,
                                             #  For example for MPII
                                             #  (self.ann_info['num_joints']) * 3
-                                             (17 * 3)
+                                             (16 * 3)
                                              )
 
             result = [{
