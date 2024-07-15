@@ -163,7 +163,7 @@ class TopDownMultiHead(BasePose):
         return self.forward_test(
             img, img_metas, return_heatmap=return_heatmap, **kwargs)
 
-    # TODO flow multi-head losses. But trainability seems different from MoE
+    # TODO flow multi-head losses. But training procedure seems different from MoE
     def forward_train(self, img, target, target_weight, img_metas, **kwargs):
         """Defines the computation performed at every call when training."""
         output = self.backbone(img)
@@ -177,10 +177,12 @@ class TopDownMultiHead(BasePose):
         if self.with_keypoint:
             keypoint_losses = self.keypoint_head.get_loss(
                 output, target, target_weight)
+            print(keypoint_losses)
             losses.update(keypoint_losses)
             keypoint_accuracy = self.keypoint_head.get_accuracy(
                 output, target, target_weight)
             losses.update(keypoint_accuracy)
+            print(keypoint_accuracy)
 
         return losses
 

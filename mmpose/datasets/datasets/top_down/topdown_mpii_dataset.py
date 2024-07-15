@@ -187,7 +187,7 @@ class TopDownMpiiDataset(Kpt2dSviewRgbImgTopDownDataset):
             for i in range(batch_size):
                 kpts.append({'keypoints': preds[i], 'bbox_id': bbox_ids[i], 'image':image_paths[i], 'bbox': bboxes[i]})
         kpts = self._sort_and_unique_bboxes(kpts)
-        print(kpts[0])
+        # print(kpts[0])
         preds = np.stack([kpt['keypoints'] for kpt in kpts])
 
         # convert 0-based index to 1-based index,
@@ -245,12 +245,8 @@ class TopDownMpiiDataset(Kpt2dSviewRgbImgTopDownDataset):
         rhip = np.where(dataset_joints == 'rhip')[1][0]
 
         # pos_pred_src will probably come in 17 hopefully with the last item useless
-        print(pos_pred_src.shape)
         pos_pred_src = pos_pred_src[:-1]
-        print(pos_pred_src.shape)
-        print(pos_gt_src.shape)
-        print(pos_gt_src[0])
-        print(pos_pred_src[0])
+
         jnt_visible = 1 - jnt_missing
         uv_error = pos_pred_src - pos_gt_src
         uv_err = np.linalg.norm(uv_error, axis=1)
