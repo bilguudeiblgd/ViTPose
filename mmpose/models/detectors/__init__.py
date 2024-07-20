@@ -9,9 +9,10 @@ from .pose_lifter import PoseLifter
 from .posewarper import PoseWarper
 from .top_down import TopDown
 from .top_down_moe import TopDownMoE
+from .top_down_combined import TopDownCombined
 
 __all__ = [
     'TopDown', 'AssociativeEmbedding', 'ParametricMesh', 'MultiTask',
     'PoseLifter', 'Interhand3D', 'PoseWarper', 'DetectAndRegress',
-    'VoxelCenterDetector', 'VoxelSinglePose', 'TopDownMoE'
+    'VoxelCenterDetector', 'VoxelSinglePose', 'TopDownMoE', 'TopDownCombined'
 ]
