@@ -314,16 +314,22 @@ class TopDownCocoDataset(Kpt2dSviewRgbImgTopDownDataset):
                 # rescoring
                 n_p['score'] = kpt_score * box_score
 
-            if self.use_nms:
-                nms = soft_oks_nms if self.soft_nms else oks_nms
-                keep = nms(img_kpts, oks_thr, sigmas=self.sigmas)
-                valid_kpts.append([img_kpts[_keep] for _keep in keep])
-            else:
-                valid_kpts.append(img_kpts)
+            # if self.use_nms:
+            #     nms = soft_oks_nms if self.soft_nms else oks_nms
+            #     keep = nms(img_kpts, oks_thr, sigmas=self.sigmas)
+            #     valid_kpts.append([img_kpts[_keep] for _keep in keep])
+            # else:
+            valid_kpts.append(img_kpts)
 
         self._write_coco_keypoint_results(valid_kpts, res_file)
 
         info_str = self._do_python_keypoint_eval(res_file)
+        stats_names = [
+            'AP', 'AP .5', 'AP .75', 'AP (M)', 'AP (L)', 'AR', 'AR .5',
+            'AR .75', 'AR (M)', 'AR (L)'
+        ]
+        stats_values = [0,0,0,0,0,0,0,0,0,0]
+        # info_str = list(zip(stats_names, stats_values))
         name_value = OrderedDict(info_str)
 
         if tmp_folder is not None:
@@ -356,12 +362,15 @@ class TopDownCocoDataset(Kpt2dSviewRgbImgTopDownDataset):
         for img_kpts in keypoints:
             if len(img_kpts) == 0:
                 continue
-
+            
             _key_points = np.array(
                 [img_kpt['keypoints'] for img_kpt in img_kpts])
+            _key_points = _key_points[:, :self.ann_info['num_joints']]
+
             key_points = _key_points.reshape(-1,
                                              self.ann_info['num_joints'] * 3)
-
+            # key_points = _key_points.reshape(-1,
+                                            #  33 * 3)
             result = [{
                 'image_id': img_kpt['image_id'],
                 'category_id': cat_id,

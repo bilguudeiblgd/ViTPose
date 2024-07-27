@@ -193,6 +193,19 @@ class TopDownCombined(BasePose):
         coco_select = target * coco_targets
         mpii_select = target * mpii_targets
         target_select = coco_select + mpii_select.flip(dims=[1])
+        target_weight[:, :17,0] = 1
+        target_weight[:, 17:,0] = 0
+        coco_target_weight_select = target_weight * (img_sources == 0).view(-1,1,1)
+        mpii_target_weight_select = target_weight * (img_sources == 1).view(-1,1,1)
+        mpii_target_weight_select_flipped = mpii_target_weight_select.flip(dims=[1])
+        mpii_target_weight_select_flipped[:, 17,0] = 0
+        target_weight_select = coco_target_weight_select + mpii_target_weight_select_flipped
+        # print(target_weight_select)
+        # 33 
+        # first 17 coco and last 16 is mpii but reversed
+        # had to be done cuz of padding to 33 joints for each training batch
+        
+
 
         # # if return loss
         # batch_size = target.size(0)
@@ -214,10 +227,10 @@ class TopDownCombined(BasePose):
         losses = dict()
         if self.with_keypoint:
             keypoint_losses = self.keypoint_head.get_loss(
-                output, target_select, target_weight)
+                output, target_select, target_weight_select)
             losses.update(keypoint_losses)
             keypoint_accuracy = self.keypoint_head.get_accuracy(
-                output, target_select, target_weight)
+                output, target_select, target_weight_select)
             losses.update(keypoint_accuracy)
 
         return losses

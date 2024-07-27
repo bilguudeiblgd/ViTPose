@@ -196,10 +196,10 @@ mpii_data_root = '/datagrid/personal/baljibil/data/MPII_COCO'
 aic_data_root = 'data/aic'
 
 data = dict(
-    samples_per_gpu=32,
-    workers_per_gpu=2,
-    val_dataloader=dict(samples_per_gpu=16),
-    test_dataloader=dict(samples_per_gpu=16),
+    samples_per_gpu=64,
+    workers_per_gpu=4,
+    val_dataloader=dict(samples_per_gpu=32),
+    test_dataloader=dict(samples_per_gpu=32),
     train=[
       dict(
         type='TopDownCocoDataset',
