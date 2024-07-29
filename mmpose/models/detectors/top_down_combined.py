@@ -50,7 +50,7 @@ class TopDownCombined(BasePose):
         self.fp16_enabled = False
 
         self.backbone = builder.build_backbone(backbone)
-
+        
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
 
@@ -89,6 +89,10 @@ class TopDownCombined(BasePose):
         self.keypoint_heads_cnt = keypoint_heads_cnt
 
         self.init_weights(pretrained=pretrained)
+
+        self.mpii2coco =  {0:16, 1:14, 5: 15, 4: 13, 2:12, 3:11, 15: 9, 14:7, 13: 5, 10:10, 11:8, 12:6}
+        self.coco2mpii =  { y:x for x,y in self.mpii2coco.items() }
+
 
     @property
     def with_neck(self):
@@ -169,60 +173,47 @@ class TopDownCombined(BasePose):
     # TODO flow multi-head losses. But training procedure seems different from MoE
     def forward_train(self, img, target, target_weight, img_metas, **kwargs):
         """Defines the computation performed at every call when training."""
-
         output = self.backbone(img)
         if self.with_neck:
             output = self.neck(output)
         if self.with_keypoint:
             output = self.keypoint_head(output)
         img_sources = torch.from_numpy(np.array([ele['dataset_idx'] for ele in img_metas])).to(img.device)
-        
-        # mpii_places = []
-        
-        # Image target coming as 33 - defined by max_num_joints in config
-        # to propogate losses in their respective correct places
-        # ones has to structure keypoints so that they flow loss to their correct places
-        # as a default target is like padded tensor with either first 16 or 17 filled
-        # their decision to hav max num joints makes sense as they can't have
-        # tensor with Nx(17|16) elements so they decide to go with max_num_joints
-        # for my decision, I keep 17 points on their place if COCO
-        # otherwise put this 16 points in the last
+
+
         coco_targets = (img_sources == 0).view(-1,1,1,1)
         mpii_targets = (img_sources == 1).view(-1,1,1,1)
 
         coco_select = target * coco_targets
         mpii_select = target * mpii_targets
-        target_select = coco_select + mpii_select.flip(dims=[1])
-        target_weight[:, :17,0] = 1
-        target_weight[:, 17:,0] = 0
-        coco_target_weight_select = target_weight * (img_sources == 0).view(-1,1,1)
-        mpii_target_weight_select = target_weight * (img_sources == 1).view(-1,1,1)
-        mpii_target_weight_select_flipped = mpii_target_weight_select.flip(dims=[1])
-        mpii_target_weight_select_flipped[:, 17,0] = 0
-        target_weight_select = coco_target_weight_select + mpii_target_weight_select_flipped
-        # print(target_weight_select)
-        # 33 
-        # first 17 coco and last 16 is mpii but reversed
-        # had to be done cuz of padding to 33 joints for each training batch
+
+        # first get points that are not only in mpii to the back. But only for coco ofc
+        # mpii head
+        mpii_select[:, 17] = mpii_select[:, 9]
+        mpii_select[:, 18] = mpii_select[:, 8]
+        mpii_select[:, 19] = mpii_select[:, 7]
+        mpii_select[:, 20] = mpii_select[:, 6]
+        # for i in range(4):
+            # mpii_select[:, 9 - i] = torch.zeros((64,48))
+
+
+        # reorder MPII points to coco definition
+        new_mpii_select = mpii_select.clone()
+        for mpii_ind, coco_ind in self.mpii2coco.items():
+            new_mpii_select[:, coco_ind] = mpii_select[:, mpii_ind]
+
+
+        target_select = coco_select + new_mpii_select
         
 
+        target_weight_select = target_weight
+        # COCO
+        target_weight_select[img_sources == 0, 17:, 0] = 0
+        target_weight_select[img_sources == 0, :17, 0] = 1
+        # MPII
+        target_weight_select[img_sources == 1, :5, 0] = 0
+        target_weight_select[img_sources == 1, 5:, 0] = 1
 
-        # # if return loss
-        # batch_size = target.size(0)
-        # num_keypoint = 17
-        # num_keypoint_mpii = 16
-        # num_keypoint_coco = 16
-        # # N x 133 x W x H -> 
-        # new_target = torch.zeros((batch_size, 
-        #                           num_keypoint_mpii + num_keypoint_coco,
-        #                           target.size(2),
-        #                           target.size(3)
-        #                           )).to(img.device)
-        # new_target[:, ] = target[:,]
-        # Output -> N x 33 x 2
-        # if ()
-        # output -> [N x 33 x 2]
-        # depending on the img_metas, only calculate loss for that set of indexes.
 
         losses = dict()
         if self.with_keypoint:

@@ -135,7 +135,11 @@ def imshow_keypoints(img,
     pose_kpt_color = pose_kpt_color.repeat(2, axis=0)[:-1]
     for kpts in pose_result:
         kpts = np.array(kpts, copy=False)
-        print(kpts)
+        print(kpts.shape)
+        
+        kpts = kpts[5:]
+        print(kpts.shape)
+        
         # draw each point on image
         if pose_kpt_color is not None:
             # assert len(pose_kpt_color) == len(kpts)
@@ -160,6 +164,7 @@ def imshow_keypoints(img,
                                    color, -1)
 
         # draw links
+        continue
         if skeleton is not None and pose_link_color is not None:
             assert len(pose_link_color) == len(skeleton)
             for sk_id, sk in enumerate(skeleton):

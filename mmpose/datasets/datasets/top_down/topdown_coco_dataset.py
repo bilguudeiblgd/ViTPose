@@ -365,6 +365,7 @@ class TopDownCocoDataset(Kpt2dSviewRgbImgTopDownDataset):
             
             _key_points = np.array(
                 [img_kpt['keypoints'] for img_kpt in img_kpts])
+            # trim down x to 17
             _key_points = _key_points[:, :self.ann_info['num_joints']]
 
             key_points = _key_points.reshape(-1,
