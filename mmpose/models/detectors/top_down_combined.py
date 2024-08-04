@@ -232,7 +232,9 @@ class TopDownCombined(BasePose):
         batch_size, _, img_height, img_width = img.shape
         if batch_size > 1:
             assert 'bbox_id' in img_metas[0]
-
+        # the keypoints or features basically come up in COCO index
+        flip_pairs = [[1,2], [3,4], [5,6], [7,8],[9,10], [11,12],[13,14], [15,16]]
+        # essentially coco as I mapped MPII indexes to coco in training
         result = {}
 
         features = self.backbone(img)
@@ -249,7 +251,7 @@ class TopDownCombined(BasePose):
                 features_flipped = self.neck(features_flipped)
             if self.with_keypoint:
                 output_flipped_heatmap = self.keypoint_head.inference_model(
-                    features_flipped, img_metas[0]['flip_pairs'])
+                    features_flipped, flip_pairs)
                 output_heatmap = (output_heatmap +
                                   output_flipped_heatmap) * 0.5
 

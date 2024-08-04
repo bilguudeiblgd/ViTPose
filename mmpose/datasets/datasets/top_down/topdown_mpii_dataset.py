@@ -171,6 +171,7 @@ class TopDownMpiiDataset(Kpt2dSviewRgbImgTopDownDataset):
         """
 
         metrics = metric if isinstance(metric, list) else [metric]
+        metrics = ['PCKh']
         allowed_metrics = ['PCKh']
         for metric in metrics:
             if metric not in allowed_metrics:
@@ -204,9 +205,20 @@ class TopDownMpiiDataset(Kpt2dSviewRgbImgTopDownDataset):
         jnt_missing = gt_dict['jnt_missing']
         pos_gt_src = gt_dict['pos_gt_src']
         headboxes_src = gt_dict['headboxes_src']
+        
+        # Extract MPII points from 21 points
+        map_mpii2coco = {0:16, 1:14, 5: 15, 4: 13, 2:12, 3:11, 15: 9, 14:7, 13: 5, 10:10, 11:8, 12:6}
+        tmp_pred = np.zeros((preds.shape[0], 16, 2))
+        for mpii_index, coco_index in map_mpii2coco.items():
+            tmp_pred[:, mpii_index] = preds[:, coco_index]
+        tmp_pred[:, 6] = preds[:, 20]
+        tmp_pred[:, 7] = preds[:, 19]
+        tmp_pred[:, 8] = preds[:, 18]
+        tmp_pred[:, 9] = preds[:, 17]
 
-        pos_pred_src = np.transpose(preds, [1, 2, 0])
-
+        # [N,K,3] -> [K,3,N]
+        pos_pred_src = np.transpose(tmp_pred, [1, 2, 0])
+        
         head = np.where(dataset_joints == 'head')[1][0]
         lsho = np.where(dataset_joints == 'lsho')[1][0]
         lelb = np.where(dataset_joints == 'lelb')[1][0]
@@ -223,6 +235,7 @@ class TopDownMpiiDataset(Kpt2dSviewRgbImgTopDownDataset):
         rhip = np.where(dataset_joints == 'rhip')[1][0]
 
         jnt_visible = 1 - jnt_missing
+
         uv_error = pos_pred_src - pos_gt_src
         uv_err = np.linalg.norm(uv_error, axis=1)
         headsizes = headboxes_src[1, :, :] - headboxes_src[0, :, :]

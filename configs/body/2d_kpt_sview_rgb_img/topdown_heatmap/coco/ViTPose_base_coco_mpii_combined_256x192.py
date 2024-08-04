@@ -217,18 +217,18 @@ data = dict(
         dataset_info={{_base_.mpii_info}}),
     ],
     val=dict(
-        type='TopDownCocoDataset',
-        ann_file=f'{data_root}/annotations/person_keypoints_val2017.json',
-        img_prefix=f'{data_root}/val2017/',
-        data_cfg=data_cfg,
+        type='TopDownMpiiDataset',
+        ann_file=f'{mpii_data_root}/annotations/mpii_val.json',
+        img_prefix=f'{mpii_data_root}/images/',
+        data_cfg=mpii_data_cfg,
         pipeline=val_pipeline,
-        dataset_info={{_base_.dataset_info}}),
+        dataset_info={{_base_.mpii_info}}),
     test=dict(
-        type='TopDownCocoDataset',
-        ann_file=f'{data_root}/annotations/person_keypoints_val2017.json',
-        img_prefix=f'{data_root}/val2017/',
-        data_cfg=data_cfg,
+        type='TopDownMpiiDataset',
+        ann_file=f'{mpii_data_root}/annotations/mpii_val.json',
+        img_prefix=f'{mpii_data_root}/images/',
+        data_cfg=mpii_data_cfg,
         pipeline=test_pipeline,
-        dataset_info={{_base_.dataset_info}}),
+        dataset_info={{_base_.mpii_info}}),
 )
 
