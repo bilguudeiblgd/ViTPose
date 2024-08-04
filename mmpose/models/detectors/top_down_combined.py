@@ -242,16 +242,16 @@ class TopDownCombined(BasePose):
             output_heatmap = self.keypoint_head.inference_model(
                 features, flip_pairs=None)
 
-        # if self.test_cfg.get('flip_test', True):
-        #     img_flipped = img.flip(3)
-        #     features_flipped = self.backbone(img_flipped)
-        #     if self.with_neck:
-        #         features_flipped = self.neck(features_flipped)
-        #     if self.with_keypoint:
-        #         output_flipped_heatmap = self.keypoint_head.inference_model(
-        #             features_flipped, img_metas[0]['flip_pairs'])
-        #         output_heatmap = (output_heatmap +
-        #                           output_flipped_heatmap) * 0.5
+        if self.test_cfg.get('flip_test', True):
+            img_flipped = img.flip(3)
+            features_flipped = self.backbone(img_flipped)
+            if self.with_neck:
+                features_flipped = self.neck(features_flipped)
+            if self.with_keypoint:
+                output_flipped_heatmap = self.keypoint_head.inference_model(
+                    features_flipped, img_metas[0]['flip_pairs'])
+                output_heatmap = (output_heatmap +
+                                  output_flipped_heatmap) * 0.5
 
         if self.with_keypoint:
             keypoint_result = self.keypoint_head.decode(
