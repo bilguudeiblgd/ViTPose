@@ -242,8 +242,12 @@ class TopDownCombined(BasePose):
         if batch_size > 1:
             assert 'bbox_id' in img_metas[0]
 
-        result = {}
+        # MPII flip pairs are flipped in 33 elements tensor
+        mpii_flip_pairs = [[0,5], [1,4], [2,3], [10,15],[11,14],[12,13]]
+        flip_pairs = [ [32-x[0], 32-x[1]] for x in mpii_flip_pairs  ]
 
+        result = {}
+        
         features = self.backbone(img)
         if self.with_neck:
             features = self.neck(features)
@@ -258,7 +262,7 @@ class TopDownCombined(BasePose):
                 features_flipped = self.neck(features_flipped)
             if self.with_keypoint:
                 output_flipped_heatmap = self.keypoint_head.inference_model(
-                    features_flipped, img_metas[0]['flip_pairs'])
+                    features_flipped, flip_pairs)
                 output_heatmap = (output_heatmap +
                                   output_flipped_heatmap) * 0.5
 

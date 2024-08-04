@@ -171,6 +171,7 @@ class TopDownMpiiDataset(Kpt2dSviewRgbImgTopDownDataset):
         """
 
         metrics = metric if isinstance(metric, list) else [metric]
+        metrics = ['PCKh']
         allowed_metrics = ['PCKh']
         for metric in metrics:
             if metric not in allowed_metrics:
@@ -204,6 +205,9 @@ class TopDownMpiiDataset(Kpt2dSviewRgbImgTopDownDataset):
         jnt_missing = gt_dict['jnt_missing']
         pos_gt_src = gt_dict['pos_gt_src']
         headboxes_src = gt_dict['headboxes_src']
+
+        # pred has 33 points including COCO + MPII_flipped
+        preds = np.flip(preds[:,17:], axis=1)
 
         pos_pred_src = np.transpose(preds, [1, 2, 0])
 
