@@ -2,6 +2,7 @@ _base_ = [
     '../../../../_base_/default_runtime.py',
     '../../../../_base_/datasets/coco.py',
     '../../../../_base_/datasets/mpii_info.py',
+    '../../../../_base_/datasets/aic_info.py',
 ]
 evaluation = dict(interval=10, metric='mAP', save_best='AP')
 
@@ -49,6 +50,14 @@ mpii_channel_cfg = dict(
   inference_channel=list(range(16))
 )
 
+aic_channel_cfg = dict(
+    num_output_channels=14,
+    dataset_joints=14,
+    dataset_channel=[
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+    ],
+    inference_channel=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+
 # model settings
 model = dict(
     type='TopDownCombined',
@@ -73,7 +82,7 @@ model = dict(
         num_deconv_filters=(256, 256),
         num_deconv_kernels=(4, 4),
         extra=dict(final_conv_kernel=1, ),
-        out_channels=21,
+        out_channels=23,
         loss_keypoint=dict(type='JointsMSELoss', use_target_weight=True)),
     
     train_cfg=dict(),
@@ -92,7 +101,7 @@ data_cfg = dict(
     num_joints=coco_channel_cfg['dataset_joints'],
     dataset_channel=coco_channel_cfg['dataset_channel'],
     inference_channel=coco_channel_cfg['inference_channel'],
-    max_num_joints=21,
+    max_num_joints=23,
     soft_nms=False,
     nms_thr=1.0,
     oks_thr=0.9,
@@ -111,10 +120,29 @@ mpii_data_cfg = dict(
     num_joints=mpii_channel_cfg['dataset_joints'],
     dataset_channel=mpii_channel_cfg['dataset_channel'],
     inference_channel=mpii_channel_cfg['inference_channel'],
-    max_num_joints=21,
+    max_num_joints=23,
     use_gt_bbox=True,
     bbox_file=None,
     dataset_idx=1,
+)
+
+aic_data_cfg = dict(
+    image_size=[192, 256],
+    heatmap_size=[48, 64],
+    num_output_channels=aic_channel_cfg['num_output_channels'],
+    num_joints=aic_channel_cfg['dataset_joints'],
+    dataset_channel=aic_channel_cfg['dataset_channel'],
+    inference_channel=aic_channel_cfg['inference_channel'],
+    soft_nms=False,
+    nms_thr=1.0,
+    oks_thr=0.9,
+    vis_thr=0.2,
+    use_gt_bbox=True,
+    det_bbox_thr=0.0,
+    bbox_file='data/coco/person_detection_results/'
+    'COCO_val2017_detections_AP_H_56_person.json',
+    max_num_joints=23,
+    dataset_idx=2,
 )
 
 
@@ -146,6 +174,32 @@ train_pipeline = [
             'rotation', 'bbox_score', 'flip_pairs', 'dataset_idx'
         ]),
 ]
+
+aic_train_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(type='TopDownRandomFlip', flip_prob=0.5),
+    dict(
+        type='TopDownHalfBodyTransform',
+        num_joints_half_body=8,
+        prob_half_body=0.3),
+    dict(
+        type='TopDownGetRandomScaleRotation', rot_factor=40, scale_factor=0.5),
+    dict(type='TopDownAffine'),
+    dict(type='ToTensor'),
+    dict(
+        type='NormalizeTensor',
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225]),
+    dict(type='TopDownGenerateTarget', sigma=2),
+    dict(
+        type='Collect',
+        keys=['img', 'target', 'target_weight'],
+        meta_keys=[
+            'image_file', 'joints_3d', 'joints_3d_visible', 'center', 'scale',
+            'rotation', 'bbox_score', 'flip_pairs', 'dataset_idx'
+        ]),
+]
+
 
 mpii_train_pipeline = [
     dict(type='LoadImageFromFile'),
@@ -193,7 +247,7 @@ test_pipeline = val_pipeline
 
 data_root = '/datagrid/personal/baljibil/data/COCO/original'
 mpii_data_root = '/datagrid/personal/baljibil/data/MPII_COCO'
-aic_data_root = 'data/aic'
+aic_data_root = '/datagrid/personal/baljibil/data/AIC/keypoints'
 
 data = dict(
     samples_per_gpu=64,
@@ -215,20 +269,51 @@ data = dict(
         data_cfg=mpii_data_cfg,
         pipeline=mpii_train_pipeline,
         dataset_info={{_base_.mpii_info}}),
+      dict(
+        type='TopDownAicDataset',
+        ann_file=f'{aic_data_root}/annotations/aic_train.json',
+        img_prefix=f'{aic_data_root}/keypoint_train/images/',
+        data_cfg=aic_data_cfg,
+        pipeline=aic_train_pipeline,
+        dataset_info={{_base_.aic_info}}),
     ],
+    # val=dict(
+    #     type='TopDownMpiiDataset',
+    #     ann_file=f'{mpii_data_root}/annotations/mpii_val.json',
+    #     img_prefix=f'{mpii_data_root}/images/',
+    #     data_cfg=mpii_data_cfg,
+    #     pipeline=val_pipeline,
+    #     dataset_info={{_base_.mpii_info}}),
+    # test=dict(
+    #     type='TopDownMpiiDataset',
+    #     ann_file=f'{mpii_data_root}/annotations/mpii_val.json',
+    #     img_prefix=f'{mpii_data_root}/images/',
+    #     data_cfg=mpii_data_cfg,
+    #     pipeline=test_pipeline,
+    #     dataset_info={{_base_.mpii_info}}),
+        
     val=dict(
-        type='TopDownMpiiDataset',
-        ann_file=f'{mpii_data_root}/annotations/mpii_val.json',
-        img_prefix=f'{mpii_data_root}/images/',
-        data_cfg=mpii_data_cfg,
+        type='TopDownCocoDataset',
+        ann_file=f'{data_root}/annotations/person_keypoints_val2017.json',
+        img_prefix=f'{data_root}/val2017/',
+        data_cfg=data_cfg,
         pipeline=val_pipeline,
-        dataset_info={{_base_.mpii_info}}),
+        dataset_info={{_base_.dataset_info}}),
     test=dict(
-        type='TopDownMpiiDataset',
-        ann_file=f'{mpii_data_root}/annotations/mpii_val.json',
-        img_prefix=f'{mpii_data_root}/images/',
-        data_cfg=mpii_data_cfg,
+        type='TopDownCocoDataset',
+        ann_file=f'{data_root}/annotations/person_keypoints_val2017.json',
+        img_prefix=f'{data_root}/val2017/',
+        data_cfg=data_cfg,
         pipeline=test_pipeline,
-        dataset_info={{_base_.mpii_info}}),
+        dataset_info={{_base_.dataset_info}}),
+
 )
+
+# dict(
+#         type='TopDownAicDataset',
+#         ann_file=f'{mpii_data_root}/annotations/aic_train.json',
+#         img_prefix=f'{mpii_data_root}/images/',
+#         data_cfg=mpii_data_cfg,
+#         pipeline=mpii_train_pipeline,
+#         dataset_info={{_base_.mpii_info}}),
 

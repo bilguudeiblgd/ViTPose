@@ -91,6 +91,7 @@ class TopDownCombined(BasePose):
         self.init_weights(pretrained=pretrained)
 
         self.mpii2coco =  {0:16, 1:14, 5: 15, 4: 13, 2:12, 3:11, 15: 9, 14:7, 13: 5, 10:10, 11:8, 12:6}
+        self.aic2coco = {8:16,7:14,6:12,9:11,10:13, 11:15, 2:10,1:8, 0:6, 3:5, 4:7,5:9}
         self.coco2mpii =  { y:x for x,y in self.mpii2coco.items() }
 
 
@@ -183,9 +184,12 @@ class TopDownCombined(BasePose):
 
         coco_targets = (img_sources == 0).view(-1,1,1,1)
         mpii_targets = (img_sources == 1).view(-1,1,1,1)
+        aic_targets = (img_sources == 2).view(-1,1,1,1)
 
         coco_select = target * coco_targets
         mpii_select = target * mpii_targets
+        aic_select = target * aic_targets
+        
 
         # first get points that are not only in mpii to the back. But only for coco ofc
         # mpii head
@@ -194,16 +198,21 @@ class TopDownCombined(BasePose):
         mpii_select[:, 19] = mpii_select[:, 7]
         mpii_select[:, 20] = mpii_select[:, 6]
         # for i in range(4):
-            # mpii_select[:, 9 - i] = torch.zeros((64,48))
+        #  for aic 
+        aic_select[:, 21] = aic_select[:, 12]
+        aic_select[:, 22] = aic_select[:, 13]
 
 
         # reorder MPII points to coco definition
         new_mpii_select = mpii_select.clone()
         for mpii_ind, coco_ind in self.mpii2coco.items():
             new_mpii_select[:, coco_ind] = mpii_select[:, mpii_ind]
+        
+        new_aic_select = aic_select.clone()
+        for aic_ind, coco_ind in self.aic2coco.items():
+            new_aic_select[:, coco_ind] = aic_select[:, aic_ind]
 
-
-        target_select = coco_select + new_mpii_select
+        target_select = coco_select + new_mpii_select + new_aic_select
         
 
         target_weight_select = target_weight
@@ -213,7 +222,11 @@ class TopDownCombined(BasePose):
         # MPII
         target_weight_select[img_sources == 1, :5, 0] = 0
         target_weight_select[img_sources == 1, 5:, 0] = 1
-
+        # AIC
+        target_weight_select[img_sources == 2, :5, 0] = 0
+        target_weight_select[img_sources == 2, 5:, 0] = 1
+        target_weight_select[img_sources == 2, 17:, 0] = 0
+        target_weight_select[img_sources == 2, 21:, 0] = 1
 
         losses = dict()
         if self.with_keypoint:
