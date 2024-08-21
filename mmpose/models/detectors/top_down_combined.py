@@ -222,6 +222,7 @@ class TopDownCombined(BasePose):
         # MPII
         target_weight_select[img_sources == 1, :5, 0] = 0
         target_weight_select[img_sources == 1, 5:, 0] = 1
+        target_weight_select[img_sources == 1, 21:, 0] = 0
         # AIC
         target_weight_select[img_sources == 2, :5, 0] = 0
         target_weight_select[img_sources == 2, 5:, 0] = 1
